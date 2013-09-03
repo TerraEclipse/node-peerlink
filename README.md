@@ -18,7 +18,6 @@ Using `peerlink` is typically a three-step process.
 First, you'll need to **start the peerlink daemon**. This daemon tracks any linked
 folders you've set up and does the work of keeping everything in sync.
 
-**Start the daemon from your teminal**
 ```
 $ peerlink-daemon
 ```
