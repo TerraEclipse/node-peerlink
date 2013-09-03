@@ -3,6 +3,54 @@ peerlink
 
 Offers `npm link` functionaltiy for developing with peerDependencies.
 
+Install
+-------
+
+```
+$ npm install -g peerlink
+```
+
+Usage
+-----
+
+Using `peerlink` is typically a three-step process.
+
+First, you'll need to **start the peerlink daemon**. This daemon tracks any linked
+folders you've set up and does the work of keeping everything in sync.
+
+**Start the daemon from your teminal**
+```
+$ peerlink-daemon
+```
+
+Next, in the root of some module you want to link, **setup the link**. This adds
+the module to the daemon's watch-list.
+
+```
+$ cd [root of your module]
+$ peerlink
+```
+
+Finally, in the location where you want to sync the linked module, **link the
+module**. This tells the daemon that you want to maintain a synced version of
+the named module here.
+
+```
+$ cd [development directory]
+$ peerlink [module-name]
+```
+
+Now, when you make changes in the linked directory, the peerlink daemon will
+copy them into `node_modules/[module-name]`. It'll even reinstall dependencies
+if you update the `package.json` of the linked library.
+
+Configuration
+--------------
+
+By default, `peerlink` will save configuration and any links in `~/.peerlink.json`.
+An alternative to using the `peerlink` cli to setup links is to edit ths file
+directly.
+
 
 - - -
 
