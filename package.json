@@ -1,0 +1,20 @@
+{
+  "name": "peerlink",
+  "version": "0.0.0",
+  "description": "Offers `npm link` functionaltiy for developing with peerDependencies.",
+  "dependencies": {},
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/TerraEclipse/node-peerlink.git"
+  },
+  "homepage": "https://github.com/TerraEclipse/node-peerlink",
+  "keywords": [
+    "peerDependencies"
+  ],
+  "author": "Brian Link <cpsubrian@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/TerraEclipse/node-peerlink/issues"
+  }
+}
