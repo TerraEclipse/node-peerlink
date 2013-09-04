@@ -1,1 +1,63 @@
 #!/usr/bin/env node
+
+var program = require('commander')
+  , pkg = require('../package.json')
+  , fs = require('fs')
+  , path = require('path')
+  , peerlink = require('../');
+
+var info;
+
+program.on('--help', function () {
+  console.log('  Will have no effect unless a `peerlink-daemon` is already running.');
+  console.log('');
+  console.log('  If no `module name` is passed, peerlink will start watching');
+  console.log('  the module in the cwd.');
+  console.log('');
+  console.log('  If a `module name` is passed, peerlink will create a');
+  console.log('  link to a module currently being watched.');
+  console.log('');
+});
+
+program
+  .usage('[module name]')
+  .version(pkg.version)
+  .option('-r, --remove', 'stop watching or linking')
+  .parse(process.argv);
+
+// Watch the current module, if it is one.
+if (program.args.length === 0) {
+  if (fs.existsSync(path.join(process.cwd(), 'package.json'))) {
+    info = require(path.join(process.cwd(), 'package.json'));
+    if (info.name) {
+      peerlink.conf.load(function (err, conf) {
+        if (err) throw err;
+        if (program.remove) {
+          delete conf.watch[info.name];
+        }
+        else {
+          conf.watch[info.name] = process.cwd();
+        }
+        peerlink.conf.save(conf, function (err) {
+          if (err) throw err;
+        });
+      });
+    }
+    else {
+      throw new Error('package.json should specify the module\'s name');
+    }
+  }
+  else {
+    throw new Error('Current working directory is NOT a module');
+  }
+}
+
+// Create link to a watched module.
+else if (program.args.length === 1) {
+
+}
+
+// Show help.
+else {
+  program.help();
+}
