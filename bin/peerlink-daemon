@@ -14,11 +14,6 @@ program
   .parse(process.argv);
 
 main.add(function (next) {
-  console.log('Starting peerlink daemon');
-  next();
-});
-
-main.add(function (next) {
   console.log('Loading ~/.peerlink.json');
   peerlink.conf.load(function (err, loaded) {
     if (err) return next(err);
@@ -35,7 +30,9 @@ main.add(function (next) {
 
 main.add(function (next) {
   console.log('Watching ~/.peerlink.json');
+
   peerlink.conf.watch();
+
   peerlink.conf.on('error', function (err) {
     throw err;
   });
@@ -44,13 +41,10 @@ main.add(function (next) {
       peerlink.watch.update(conf.watch, changed.watch);
     }
     if (changed.links) {
-      //peerlink.links.update(conf.links, changed.links);
+      peerlink.links.update(conf.links, changed.links);
     }
   });
-  next();
-});
 
-main.add(function (next) {
   peerlink.watch.on('add', function (name, path) {
     console.log('Watch - Adding', name);
     conf.watch[name] = path;
@@ -63,9 +57,24 @@ main.add(function (next) {
     console.log('Watch - Remove', name);
     delete conf.watch[name];
   });
+
+  peerlink.links.on('add', function (name, path) {
+    console.log('Links - Adding', name);
+    conf.links[name] = path;
+  });
+  peerlink.links.on('change', function (name, path) {
+    console.log('Links - Change', name);
+    conf.links[name] = path;
+  });
+  peerlink.links.on('remove', function (name, path) {
+    console.log('Links - Remove', name);
+    delete conf.links[name];
+  });
+
   next();
 });
 
+console.log('Starting peerlink daemon');
 main.runSeries(function (err) {
   if (err) throw err;
 });

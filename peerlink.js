@@ -30,7 +30,7 @@ exports.conf.load = function (cb) {
 };
 
 exports.conf.save = function (conf, cb) {
-  fs.writeFile(confPath, JSON.stringify(conf), cb);
+  fs.writeFile(confPath, JSON.stringify(conf, null, 2), cb);
 };
 
 exports.conf.watch = function () {
@@ -72,4 +72,27 @@ exports.watch.update = function (old, updated) {
     }
   });
 };
+
+
+/**
+ * Linked modules.
+ */
+exports.links = new EventEmitter();
+
+exports.links.update = function (old, updated) {
+  Object.keys(old).forEach(function (name) {
+    if (!updated[name]) {
+      exports.links.emit('remove', name, old[name]);
+    }
+  });
+  Object.keys(updated).forEach(function (name) {
+    if (typeof old[name] === 'undefined') {
+      exports.links.emit('add', name, updated[name]);
+    }
+    else if (old[name] !== updated[name]) {
+      exports.links.emit('change', name, updated[name]);
+    }
+  });
+}
+
 
