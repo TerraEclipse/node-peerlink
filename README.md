@@ -40,14 +40,13 @@ $ peerlink [module-name]
 ```
 
 Now, when you make changes in the linked directory, the peerlink daemon will
-copy them into `node_modules/[module-name]`. It'll even reinstall dependencies
-if you update the `package.json` of the linked library.
+copy them into `node_modules/[module-name]`.
 
 Configuration
 --------------
 
-By default, `peerlink` will save configuration and any links in `~/.peerlink.json`.
-An alternative to using the `peerlink` cli to setup links is to edit ths file
+By default, `peerlink` will save configuration in `~/.peerlink.json`.
+An alternative to using the `peerlink` cli to setup links is to edit this file
 directly.
 
 

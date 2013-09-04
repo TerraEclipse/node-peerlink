@@ -6,7 +6,7 @@ var program = require('commander')
   , path = require('path')
   , peerlink = require('../');
 
-var info;
+var msg, moduleName, info;
 
 program.on('--help', function () {
   console.log('  Will have no effect unless a `peerlink-daemon` is already running.');
@@ -34,12 +34,15 @@ if (program.args.length === 0) {
         if (err) throw err;
         if (program.remove) {
           delete conf.watch[info.name];
+          msg = 'Stopped watching ' + info.name;
         }
         else {
           conf.watch[info.name] = process.cwd();
+          msg = 'Watching ' + info.name;
         }
         peerlink.conf.save(conf, function (err) {
           if (err) throw err;
+          console.log(msg);
         });
       });
     }
@@ -54,7 +57,25 @@ if (program.args.length === 0) {
 
 // Create link to a watched module.
 else if (program.args.length === 1) {
-
+  moduleName = program.args[0];
+  peerlink.conf.load(function (err, conf) {
+    if (err) throw err;
+    if (program.remove) {
+      msg = 'Removed link to ' + moduleName;
+      peerlink.conf.removeLink(conf.links, moduleName, process.cwd());
+    }
+    else {
+      msg = 'Created link to ' + moduleName;
+      if (!conf.watch[moduleName]) {
+        msg += ' (its not currently being watched)';
+      }
+      peerlink.conf.addLink(conf.links, moduleName, process.cwd());
+    }
+    peerlink.conf.save(conf, function (err) {
+      if (err) throw err;
+      console.log(msg);
+    });
+  });
 }
 
 // Show help.
