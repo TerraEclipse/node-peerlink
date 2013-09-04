@@ -5,7 +5,9 @@
   "dependencies": {
     "saw": "~0.5.2",
     "commander": "~2.0.0",
-    "stact": "0.0.11"
+    "stact": "0.0.11",
+    "cpr": "~0.1.1",
+    "mkdirp": "~0.3.5"
   },
   "devDependencies": {},
   "main": "peerlink.js",

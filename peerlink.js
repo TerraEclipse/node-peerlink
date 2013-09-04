@@ -1,6 +1,7 @@
 var fs = require('fs')
   , path = require('path')
   , EventEmitter = require('events').EventEmitter
+  , saw = require('saw')
   , home = process.env[(process.platform == 'win32') ? 'USERPROFILE' : 'HOME']
   , confPath = path.resolve(home, '.peerlink.json');
 
@@ -73,6 +74,13 @@ exports.watch.update = function (old, updated) {
   });
 };
 
+exports.watch.create = function (name, path) {
+  return saw(path, {delay: 100, persistent: true})
+    .on('all', function (ev, file) {
+      exports.watch.emit('files:changed', name, path, ev, file);
+    });
+};
+
 
 /**
  * Linked modules.
@@ -93,6 +101,6 @@ exports.links.update = function (old, updated) {
       exports.links.emit('change', name, updated[name]);
     }
   });
-}
+};
 
 

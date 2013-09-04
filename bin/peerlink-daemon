@@ -1,13 +1,16 @@
 #!/usr/bin/env node
 
-var program = require('commander'),
-    pkg = require('../package.json'),
-    peerlink = require('../'),
-    fs = require('fs'),
-    path = require('path'),
-    main = require('stact')();
+var program = require('commander')
+  , pkg = require('../package.json')
+  , peerlink = require('../')
+  , fs = require('fs')
+  , mkdirp = require('mkdirp')
+  , cpr = require('cpr')
+  , path = require('path')
+  , main = require('stact')();
 
-var conf = {};
+var conf = {}
+  , watchers = {};
 
 program
   .version(pkg.version)
@@ -45,32 +48,77 @@ main.add(function (next) {
     }
   });
 
-  peerlink.watch.on('add', function (name, path) {
-    console.log('Watch - Adding', name);
-    conf.watch[name] = path;
+  peerlink.watch.on('add', function (moduleName, modulePath) {
+    console.log('Watchers - Add', moduleName, '=>', modulePath);
+    conf.watch[moduleName] = modulePath;
+    watchers[moduleName] = peerlink.watch.create(moduleName, modulePath);
   });
-  peerlink.watch.on('change', function (name, path) {
-    console.log('Watch - Change', name);
-    conf.watch[name] = path;
+  peerlink.watch.on('change', function (moduleName, modulePath) {
+    console.log('Watchers - Change', moduleName, '=>', modulePath);
+    conf.watch[moduleName] = modulePath;
+    if (watchers[moduleName]) {
+      watchers[moduleName].removeAllListeners();
+      watchers[moduleName].close();
+    }
+    watchers[moduleName] = peerlink.watch.create(moduleName, modulePath);
   });
-  peerlink.watch.on('remove', function (name, path) {
-    console.log('Watch - Remove', name);
-    delete conf.watch[name];
-  });
-
-  peerlink.links.on('add', function (name, path) {
-    console.log('Links - Adding', name);
-    conf.links[name] = path;
-  });
-  peerlink.links.on('change', function (name, path) {
-    console.log('Links - Change', name);
-    conf.links[name] = path;
-  });
-  peerlink.links.on('remove', function (name, path) {
-    console.log('Links - Remove', name);
-    delete conf.links[name];
+  peerlink.watch.on('remove', function (moduleName, modulePath) {
+    console.log('Watchers - Remove', moduleName, '=>', modulePath);
+    delete conf.watch[moduleName];
+    if (watchers[moduleName]) {
+      watchers[moduleName].removeAllListeners();
+      watchers[moduleName].close();
+    }
   });
 
+  peerlink.links.on('add', function (moduleName, linkPath) {
+    console.log('Links - Add', moduleName, '=>', linkPath);
+    conf.links[linkPath + ':' + moduleName] = {module: moduleName, path: linkPath};
+  });
+  peerlink.links.on('change', function (moduleName, linkPath) {
+    console.log('Links - Change', moduleName, '=>', linkPath);
+    conf.links[linkPath + ':' + moduleName] = {module: moduleName, path: linkPath};
+  });
+  peerlink.links.on('remove', function (moduleName, linkPath) {
+    console.log('Links - Remove', moduleName, '=>', linkPath);
+    delete conf.links[linkPath + ':' + moduleName];
+  });
+
+  next();
+});
+
+main.add(function (next) {
+  var link, src, dest;
+
+  Object.keys(conf.watch).forEach(function (moduleName) {
+    watchers[moduleName] = peerlink.watch.create(moduleName, conf.watch[moduleName]);
+  });
+
+  // Here's where we watch for file changes, loop through the linked
+  // directories and update them.
+  peerlink.watch.on('files:changed', function (moduleName, modulePath, ev, file) {
+    console.log('Changed: ', moduleName + ' [' + modulePath + ']');
+    Object.keys(conf.links).forEach(function (key) {
+      link = conf.links[key];
+      if (link.moduleName === moduleName) {
+        src = conf.watch[link.moduleName];
+        dest = path.join(link.path, 'node_modules', link.moduleName);
+
+        if (!fs.existsSync(dest)) {
+          mkdirp.sync(dest);
+        }
+
+        cpr(src, dest, {
+          filter: /\.git|\.DS_Store|node_modules/
+        }, function (err) {
+          // We don't wan't copy errors to crash to daemon.
+          if (err) return console.error(err);
+        });
+      }
+    });
+  });
+
+  console.log('Watching', Object.keys(watchers).length, 'modules');
   next();
 });
 
