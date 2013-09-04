@@ -31,7 +31,9 @@ exports.conf.load = function (cb) {
 };
 
 exports.conf.save = function (conf, cb) {
-  fs.writeFile(confPath, JSON.stringify(conf, null, 2), cb);
+  fs.writeFile(confPath, JSON.stringify(conf, null, 2), function (err) {
+    if (cb) cb(err);
+  });
 };
 
 exports.conf.watch = function () {

@@ -101,9 +101,15 @@ main.add(function (next) {
     Object.keys(conf.links).forEach(function (key) {
       link = conf.links[key];
       if (link.moduleName === moduleName) {
+        // If the linked directory no longer exists, remove the link and abort.
+        if (!fs.existsSync(link.path)) {
+          delete conf.links[key];
+          peerlink.conf.save(conf);
+          return;
+        }
+
         src = conf.watch[link.moduleName];
         dest = path.join(link.path, 'node_modules', link.moduleName);
-
         if (!fs.existsSync(dest)) {
           mkdirp.sync(dest);
         }
