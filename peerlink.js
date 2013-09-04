@@ -55,6 +55,40 @@ exports.conf.watch = function () {
   });
 };
 
+exports.conf.addLink = function (links, moduleName, linkPath) {
+  var found = false;
+  links.forEach(function (link) {
+    if (link.module === moduleName && link.path === linkPath) {
+      found = true;
+    }
+  });
+  if (!found) {
+    links.push({module: moduleName, path: linkPath});
+  }
+};
+
+exports.conf.removeLink = function (links, moduleName, linkPath) {
+  var index = -1;
+  links.forEach(function (link, i) {
+    if (link.module === moduleName && link.path === linkPath) {
+      index = i;
+    }
+  });
+  if (index >= 0) {
+    links.splice(index, 1);
+  }
+};
+
+exports.conf.linkExists = function (links, moduleName, linkPath) {
+  var exists = false;
+  links.forEach(function (link, i) {
+    if (link.module === moduleName && link.path === linkPath) {
+      exists = true;
+    }
+  });
+  return exists;
+};
+
 /**
  * Watching modules.
  */
@@ -90,17 +124,14 @@ exports.watch.create = function (name, path) {
 exports.links = new EventEmitter();
 
 exports.links.update = function (old, updated) {
-  Object.keys(old).forEach(function (name) {
-    if (!updated[name]) {
-      exports.links.emit('remove', name, old[name]);
+  old.forEach(function (link) {
+    if (!exports.conf.linkExists(updated, link.module, link.path)) {
+      exports.links.emit('remove', link.module, link.path);
     }
   });
-  Object.keys(updated).forEach(function (name) {
-    if (typeof old[name] === 'undefined') {
-      exports.links.emit('add', name, updated[name]);
-    }
-    else if (old[name] !== updated[name]) {
-      exports.links.emit('change', name, updated[name]);
+  updated.forEach(function (link) {
+    if (!exports.conf.linkExists(old, link.module, link.path)) {
+      exports.links.emit('add', link.module, link.path);
     }
   });
 };

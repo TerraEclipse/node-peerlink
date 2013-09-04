@@ -25,7 +25,7 @@ main.add(function (next) {
       next();
     }
     else {
-      conf = {watch: {}, links: {}};
+      conf = {watch: {}, links: []};
       peerlink.conf.save(conf, next);
     }
   });
@@ -73,23 +73,17 @@ main.add(function (next) {
 
   peerlink.links.on('add', function (moduleName, linkPath) {
     console.log('Links - Add', moduleName, '=>', linkPath);
-    conf.links[linkPath + ':' + moduleName] = {module: moduleName, path: linkPath};
-  });
-  peerlink.links.on('change', function (moduleName, linkPath) {
-    console.log('Links - Change', moduleName, '=>', linkPath);
-    conf.links[linkPath + ':' + moduleName] = {module: moduleName, path: linkPath};
+    peerlink.conf.addLink(conf.links, moduleName, linkPath);
   });
   peerlink.links.on('remove', function (moduleName, linkPath) {
     console.log('Links - Remove', moduleName, '=>', linkPath);
-    delete conf.links[linkPath + ':' + moduleName];
+    peerlink.conf.removeLink(conf.links, moduleName, linkPath);
   });
 
   next();
 });
 
 main.add(function (next) {
-  var link, src, dest;
-
   Object.keys(conf.watch).forEach(function (moduleName) {
     watchers[moduleName] = peerlink.watch.create(moduleName, conf.watch[moduleName]);
   });
@@ -97,19 +91,19 @@ main.add(function (next) {
   // Here's where we watch for file changes, loop through the linked
   // directories and update them.
   peerlink.watch.on('files:changed', function (moduleName, modulePath, ev, file) {
-    console.log('Changed: ', moduleName + ' [' + modulePath + ']');
-    Object.keys(conf.links).forEach(function (key) {
-      link = conf.links[key];
-      if (link.moduleName === moduleName) {
+    console.log('Watched Changed:', moduleName + ' [' + modulePath + ']');
+    conf.links.forEach(function (link) {
+      var src, dest;
+      if (link.module === moduleName) {
         // If the linked directory no longer exists, remove the link and abort.
         if (!fs.existsSync(link.path)) {
-          delete conf.links[key];
+          peerlink.conf.removeLink(conf.links, link.module, link.path);
           peerlink.conf.save(conf);
           return;
         }
 
-        src = conf.watch[link.moduleName];
-        dest = path.join(link.path, 'node_modules', link.moduleName);
+        src = conf.watch[link.module];
+        dest = path.join(link.path, 'node_modules', link.module);
         if (!fs.existsSync(dest)) {
           mkdirp.sync(dest);
         }
@@ -119,6 +113,7 @@ main.add(function (next) {
         }, function (err) {
           // We don't wan't copy errors to crash to daemon.
           if (err) return console.error(err);
+          console.log('Link Updated:', link.module + ' in ' + link.path);
         });
       }
     });
