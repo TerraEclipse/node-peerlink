@@ -1,6 +1,6 @@
 {
   "name": "peerlink",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Offers `npm link` functionaltiy for developing with peerDependencies.",
   "dependencies": {
     "saw": "~0.5.2",
