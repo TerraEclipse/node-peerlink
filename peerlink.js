@@ -111,10 +111,13 @@ exports.watch.update = function (old, updated) {
 };
 
 exports.watch.create = function (name, path) {
-  return saw(path, {delay: 300, persistent: true})
+  return saw(path, {delay: 200, persistent: true})
     .on('all', function (ev, file) {
       if (!file.path.match(/\.git|node_modules/)) {
-        exports.watch.emit('files:changed', name, path, ev, file);
+        clearTimeout(exports.watch.timeout);
+        exports.watch.timeout = setTimeout(function () {
+          exports.watch.emit('files:changed', name, path);
+        }, 400);
       }
     });
 };

@@ -90,7 +90,7 @@ main.add(function (next) {
 
   // Here's where we watch for file changes, loop through the linked
   // directories and update them.
-  peerlink.watch.on('files:changed', function (moduleName, modulePath, ev, file) {
+  peerlink.watch.on('files:changed', function (moduleName, modulePath) {
     console.log('Watched Changed:', moduleName + ' [' + modulePath + ']');
     conf.links.forEach(function (link) {
       var src, dest;
@@ -109,6 +109,7 @@ main.add(function (next) {
         }
 
         cpr(src, dest, {
+          overwrite: true,
           filter: /\.git|\.DS_Store|node_modules/
         }, function (err) {
           // We don't wan't copy errors to crash to daemon.
