@@ -5,7 +5,6 @@ var program = require('commander')
   , peerlink = require('../')
   , fs = require('fs')
   , mkdirp = require('mkdirp')
-  , cpr = require('cpr')
   , path = require('path')
   , main = require('stact')();
 
@@ -90,8 +89,8 @@ main.add(function (next) {
 
   // Here's where we watch for file changes, loop through the linked
   // directories and update them.
-  peerlink.watch.on('files:changed', function (moduleName, modulePath) {
-    console.log('Watched Changed:', moduleName + ' [' + modulePath + ']');
+  peerlink.watch.on('file:changed', function (moduleName, modulePath, ev, file) {
+    console.log('Changed:', moduleName + ' [' + modulePath + ']');
     conf.links.forEach(function (link) {
       var src, dest;
       if (link.module === moduleName) {
@@ -108,14 +107,12 @@ main.add(function (next) {
           mkdirp.sync(dest);
         }
 
-        cpr(src, dest, {
-          overwrite: true,
-          filter: /\.git|\.DS_Store|node_modules/
-        }, function (err) {
-          // We don't wan't copy errors to crash to daemon.
-          if (err) return console.error(err);
-          console.log('Link Updated:', link.module + ' in ' + link.path);
-        });
+        try {
+          peerlink.change(src, dest, ev, file);
+        }
+        catch (err) {
+          console.err(err);
+        }
       }
     });
   });

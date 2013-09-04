@@ -2,6 +2,9 @@ var fs = require('fs')
   , path = require('path')
   , EventEmitter = require('events').EventEmitter
   , saw = require('saw')
+  , cp = require('cp')
+  , mkdirp = require('mkdirp')
+  , rimraf = require('rimraf')
   , home = process.env[(process.platform == 'win32') ? 'USERPROFILE' : 'HOME']
   , confPath = path.resolve(home, '.peerlink.json');
 
@@ -114,10 +117,7 @@ exports.watch.create = function (name, path) {
   return saw(path, {delay: 200, persistent: true})
     .on('all', function (ev, file) {
       if (!file.path.match(/\.git|node_modules/)) {
-        clearTimeout(exports.watch.timeout);
-        exports.watch.timeout = setTimeout(function () {
-          exports.watch.emit('files:changed', name, path);
-        }, 400);
+        exports.watch.emit('file:changed', name, path, ev, file);
       }
     });
 };
@@ -139,6 +139,30 @@ exports.links.update = function (old, updated) {
       exports.links.emit('add', link.module, link.path);
     }
   });
+};
+
+/**
+ * Deal with a changed file.
+ */
+exports.change = function (src, dest, ev, file) {
+  if (ev === 'add') {
+    if (file.stat.isDirectory()) {
+      mkdirp.sync(path.join(dest, file.path));
+    }
+    else {
+      mkdirp.sync(path.join(dest, file.parentDir));
+      cp.sync(file.fullPath, path.join(dest, file.path));
+    }
+  }
+  else if (ev === 'update') {
+    if (file.stat.isFile()) {
+      mkdirp.sync(path.join(dest, file.parentDir));
+      cp.sync(file.fullPath, path.join(dest, file.path));
+    }
+  }
+  else if (ev === 'remove') {
+    rimraf.sync(path.join(dest, file.path));
+  }
 };
 
 
