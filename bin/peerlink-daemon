@@ -1,1 +1,71 @@
 #!/usr/bin/env node
+
+var program = require('commander'),
+    pkg = require('../package.json'),
+    peerlink = require('../'),
+    fs = require('fs'),
+    path = require('path'),
+    main = require('stact')();
+
+var conf = {};
+
+program
+  .version(pkg.version)
+  .parse(process.argv);
+
+main.add(function (next) {
+  console.log('Starting peerlink daemon');
+  next();
+});
+
+main.add(function (next) {
+  console.log('Loading ~/.peerlink.json');
+  peerlink.conf.load(function (err, loaded) {
+    if (err) return next(err);
+    if (loaded) {
+      conf = loaded;
+      next();
+    }
+    else {
+      conf = {watch: {}, links: {}};
+      peerlink.conf.save(conf, next);
+    }
+  });
+});
+
+main.add(function (next) {
+  console.log('Watching ~/.peerlink.json');
+  peerlink.conf.watch();
+  peerlink.conf.on('error', function (err) {
+    throw err;
+  });
+  peerlink.conf.on('change', function (changed) {
+    if (changed.watch) {
+      peerlink.watch.update(conf.watch, changed.watch);
+    }
+    if (changed.links) {
+      //peerlink.links.update(conf.links, changed.links);
+    }
+  });
+  next();
+});
+
+main.add(function (next) {
+  peerlink.watch.on('add', function (name, path) {
+    console.log('Watch - Adding', name);
+    conf.watch[name] = path;
+  });
+  peerlink.watch.on('change', function (name, path) {
+    console.log('Watch - Change', name);
+    conf.watch[name] = path;
+  });
+  peerlink.watch.on('remove', function (name, path) {
+    console.log('Watch - Remove', name);
+    delete conf.watch[name];
+  });
+  next();
+});
+
+main.runSeries(function (err) {
+  if (err) throw err;
+});

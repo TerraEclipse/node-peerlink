@@ -4,7 +4,8 @@
   "description": "Offers `npm link` functionaltiy for developing with peerDependencies.",
   "dependencies": {
     "saw": "~0.5.2",
-    "commander": "~2.0.0"
+    "commander": "~2.0.0",
+    "stact": "0.0.11"
   },
   "devDependencies": {},
   "main": "peerlink.js",
